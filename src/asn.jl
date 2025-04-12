@@ -105,8 +105,8 @@ function parse_tag(buff::Vector{UInt8})
     tag_encoding = (buff[1] & 0b00100000) == 0b00100000
     tag_number_long_form = (buff[1] & 0b00011111) == 0b00011111
     tag_number = UInt64(0)
-    tag_number_lenght = 0
-    offset = 1
+    tag_number_lenght = UInt64(0)
+    offset = UInt64(1)
     if !tag_number_long_form
         tag_number = UInt64(buff[offset] & 0b00011111)
         offset += 1
@@ -124,16 +124,16 @@ function parse_tag(buff::Vector{UInt8})
         end
     end
     content_length_indefinite = buff[offset] == 0b10000000
-    tag_length_length = 0
+    tag_length_length = UInt64(0)
     if !content_length_indefinite
         short_form = (buff[offset] & 0b10000000) == 0
         if short_form
-            content_length = buff[offset] & 0b01111111
-            tag_length_length = 1
+            content_length = UInt64(buff[offset] & 0b01111111)
+            tag_length_length = UInt64(1)
             offset += 1
         else
-            c_l_octet_count = buff[offset] & 0b01111111
-            tag_length_length = 1
+            c_l_octet_count = UInt64(buff[offset] & 0b01111111)
+            tag_length_length = UInt64(1)
             offset += 1
             cl_buffer_slice = offset:offset + c_l_octet_count - 1
             cl_buffer = vcat(zeros(UInt8, 8 - length(cl_buffer_slice)), buff[cl_buffer_slice])
@@ -142,7 +142,7 @@ function parse_tag(buff::Vector{UInt8})
             tag_length_length += c_l_octet_count
         end
     else
-        tag_length_length = 1
+        tag_length_length = UInt64(1)
         offset += 1
         pattern_idx = findfirst(UInt8[0, 0], buff[offset:end])
         if isnothing(pattern_idx)
