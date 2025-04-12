@@ -144,7 +144,11 @@ function parse_tag(buff::Vector{UInt8})
     else
         tag_length_length = 1
         offset += 1
-        idx = findfirst(UInt8[0, 0], buff[offset:end])[1]
+        pattern_idx = findfirst(UInt8[0, 0], buff[offset:end])
+        if isnothing(pattern_idx)
+            return nothing
+        end
+        idx = pattern_idx[1]
         content_length = length(offset:offset + idx - 2) 
     end
     content = buff[offset:offset + content_length - 1]
@@ -165,7 +169,9 @@ end
 
 function parse_asn1(buff::Vector{UInt8})
     tag = parse_tag(buff)
-    if tag.tag_encoding
+    if isnothing(tag)
+        return nothing
+    elseif tag.tag_encoding
         tmp = parse_asn1_children(tag.content)
         append!(tag.children, tmp)
         resize!(tag.content, 0)
@@ -178,6 +184,9 @@ function parse_asn1_children(buff::Vector{UInt8})
     idx = 1
     while idx <= length(buff)
         child = parse_asn1(buff[idx:end])
+        if isnothing(child)
+            return nothing
+        end
         push!(children, child)
         idx += serialized_length(child)
     end
