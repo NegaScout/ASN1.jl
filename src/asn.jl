@@ -1,6 +1,62 @@
 export parse_tag, ASNTag
 import Base.==
 
+function enum_defined(T::Type{<:Enum}, x::Integer)
+    return haskey(Base.Enums.namemap(T), x)
+end
+
+@enum TagClass begin
+    universal=0b00
+    application=0b01
+    context_specific=0b10
+    private=0b11
+end
+
+@enum TagEncoding begin
+    primitive=false
+    constructed=true
+end
+
+@enum ContentLengthType begin
+    definite=false
+    indefinite=true
+end
+
+@enum ClassUniversalTagNumber begin
+    u_reserved = 0
+    u_boolean = 1
+    u_integer = 2
+    u_bit_string = 3
+    u_octet_string = 4
+    u_null = 5
+    u_object_identifier = 6
+    u_object_descriptor = 7
+    u_external = 8
+    u_real = 9
+    u_enumerated = 10
+    u_embedded_pdv = 11
+    u_utf8_string = 12
+    u_relative_oid = 13
+    u_reserved_14 = 14
+    u_reserved_15 = 15
+    u_sequence = 16
+    u_set = 17
+    u_char_18 = 18
+    u_char_19 = 19
+    u_char_20 = 20
+    u_char_21 = 21
+    u_char_22 = 22
+    u_time_type_23 = 23
+    u_time_type_24 = 24
+    u_char_25 = 25
+    u_char_26 = 26
+    u_char_27 = 27
+    u_char_28 = 28
+    u_char_29 = 29
+    u_char_30 = 30
+    u_reserved_31 = 31
+end
+
 struct ASNTag
     tag_class::UInt8
     tag_encoding::Bool
@@ -14,27 +70,23 @@ struct ASNTag
 end
 
 function Base.show(io::IO, tag::ASNTag)
-    if isempty(tag.children)
-        print(io, "(",
-                    tag.tag_class, ", ",
-                    tag.tag_encoding, ", ",
-                    tag.tag_number_lenght, ", ",
-                    tag.tag_number, ", ",
-                    tag.tag_length_length, ", ",
-                    tag.content_length_indefinite, ", ",
-                    tag.content_length, ", ",
-                    tag.content, ", ASNTag[])")
-    else
-        print(io, "(",
-                    tag.tag_class, ", ",
-                    tag.tag_encoding, ", ",
-                    tag.tag_number_lenght, ", ",
-                    tag.tag_number, ", ",
-                    tag.tag_length_length, ", ",
-                    tag.content_length_indefinite, ", ",
-                    tag.content_length, ", ",
-                    tag.content, ", ASNTag[...])")
+    _tag_number = tag.tag_number
+    if enum_defined(ClassUniversalTagNumber, _tag_number)
+        _tag_number = ClassUniversalTagNumber(_tag_number)
     end
+    vals = [TagClass(tag.tag_class),
+            TagEncoding(tag.tag_encoding),
+            tag.tag_number_lenght,
+            _tag_number,
+            tag.tag_length_length,
+            ContentLengthType(tag.content_length_indefinite),
+            tag.content_length]
+    if isempty(tag.children)
+        append!(vals, ["UInt8[...]", "ASNTag[]"])
+    else
+        append!(vals, ["UInt8[]", "ASNTag[...]"])
+    end
+    print(io, "ASNTag(", join(vals, ", "), ")")
 end
 
 function ==(a::ASNTag, b::ASNTag)
