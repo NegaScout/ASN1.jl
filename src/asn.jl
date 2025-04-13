@@ -65,7 +65,7 @@ struct ASNTag
     tag_length_length::UInt64
     content_length_indefinite::Bool
     content_length::UInt64
-    content::Vector{UInt8}
+    content::AbstractVector{UInt8}
     children::Vector{ASNTag}
 end
 
@@ -100,7 +100,7 @@ function ==(a::ASNTag, b::ASNTag)
             a.children == b.children)
 end
 
-function parse_tag(buff::Vector{UInt8})
+function parse_tag(buff::AbstractVector{UInt8})
     tag_class = buff[1] >> 6
     tag_encoding = (buff[1] & 0b00100000) == 0b00100000
     tag_number_long_form = (buff[1] & 0b00011111) == 0b00011111
@@ -144,14 +144,14 @@ function parse_tag(buff::Vector{UInt8})
     else
         tag_length_length = UInt64(1)
         offset += 1
-        pattern_idx = findfirst(UInt8[0, 0], buff[offset:end])
+        pattern_idx = findfirst(UInt8[0, 0], view(buff, offset:length(buff)))
         if isnothing(pattern_idx)
             return nothing
         end
         idx = pattern_idx[1]
         content_length = length(offset:offset + idx - 2) 
     end
-    content = buff[offset:offset + content_length - 1]
+    content = view(buff, offset:offset + content_length - 1)
     return ASNTag(tag_class, 
                   tag_encoding,
                   tag_number_lenght,
@@ -167,19 +167,19 @@ function serialized_length(tag::ASNTag)
     return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*tag.content_length_indefinite
 end
 
-function parse_asn1(buff::Vector{UInt8})
+function parse_asn1(buff::AbstractVector{UInt8})
     tag = parse_tag(buff)
     if isnothing(tag)
         return nothing
     elseif tag.tag_encoding
         tmp = parse_asn1_children(tag.content)
         append!(tag.children, tmp)
-        resize!(tag.content, 0)
+        #resize!(tag.content, 0)
     end
     return tag
 end
 
-function parse_asn1_children(buff::Vector{UInt8})
+function parse_asn1_children(buff::AbstractVector{UInt8})
     children = ASNTag[]
     idx = 1
     while idx <= length(buff)
