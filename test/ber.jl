@@ -5,6 +5,8 @@
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "class application" begin
         test_vector = [0b01000001, 0b00000000]
@@ -12,6 +14,8 @@
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "class Context-specific" begin
         test_vector = [0b10000001, 0b00000000]
@@ -19,6 +23,8 @@
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "class Private" begin
         test_vector = [0b11000001, 0b00000000]
@@ -26,6 +32,8 @@
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
 end
 
@@ -36,6 +44,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "encoding constructed" begin
         test_vector = [0b00100001, 0b00000000]
@@ -43,6 +53,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
 end
 
@@ -53,6 +65,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "tag number long - 1 link" begin
         test_vector = [0b00011111, 0b00000001, 0b00000000]
@@ -60,6 +74,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "tag number long - 2 links" begin
         test_vector = [0b00011111, 0b10000001, 0b00000001, 0b00000000]
@@ -67,6 +83,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
 end
 
@@ -77,6 +95,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite short ~ nonzero length 1" begin
         test_vector = [0b00000001, 0b00000001, 0b00000001]
@@ -84,6 +104,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite short ~ nonzero length 2" begin
         test_vector = [0b00000001, 0b00000010, 0b00000001, 0b00000001]
@@ -91,6 +113,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite long - 1 octet of length, length zero" begin
         test_vector = [0b00000001, 0b10000001, 0b00000000]
@@ -98,6 +122,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite long - 1 octet of length, nonzero length 1" begin
         test_vector = [0b00000001, 0b10000001, 0b00000001, 0b00000000]
@@ -105,6 +131,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite long - 1 octet of length, nonzero length 2" begin
         test_vector = [0b00000001, 0b10000001, 0b00000010, 0b00000000, 0b00000000]
@@ -112,6 +140,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite long - 2 octet of length, length zero" begin
         test_vector = [0b00000001, 0b10000010, 0b00000000, 0b00000000]
@@ -119,6 +149,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite long - 2 octet of length, length 1" begin
         test_vector = [0b00000001, 0b10000010, 0b00000000, 0b00000001, 0b00000000]
@@ -126,6 +158,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length definite long - 2 octet of length, length 2" begin
         test_vector = [0b00000001, 0b10000010, 0b00000000, 0b00000010, 0b00000000, 0b00000000]
@@ -133,6 +167,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length indefinite - zero length content" begin
         test_vector = [0b00000001, 0b10000000, 0b00000000, 0b00000000]
@@ -140,6 +176,8 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
     @testset "content length indefinite - nonzero length content" begin
         test_vector = [0b00000001, 0b10000000, 0b00000001, 0b00000001, 0b00000000, 0b00000000]
@@ -147,5 +185,7 @@ end
         @test ASN1.serialized_length(wanted_tag) == length(test_vector)
         result = @inferred Union{ASN1.ASNTag, Nothing} ASN1.deserialize_tag(test_vector)
         @test result == wanted_tag
+        result_serialized = @inferred Vector{UInt8} ASN1.serialize_ber(result)
+        @test result_serialized == test_vector
     end
 end

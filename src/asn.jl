@@ -60,6 +60,7 @@ end
 struct ASNTag
     tag_class::UInt8
     tag_encoding::Bool
+    tag_number_long_form::Bool
     tag_number_lenght::UInt64
     tag_number::UInt64
     tag_length_length::UInt64
@@ -104,7 +105,7 @@ end
 function deserialize_tag(buff::Vector{UInt8})
     tag_class = buff[1] >> 6
     tag_encoding = (buff[1] & 0b00100000) == 0b00100000
-    tag_number_long_form = (buff[1] & 0b00011111) == 0b00011111
+    tag_number_long_form = Bool((buff[1] & 0b00011111) == 0b00011111)
     tag_number = UInt64(0)
     tag_number_lenght = UInt64(0)
     offset = UInt64(1)
@@ -156,6 +157,7 @@ function deserialize_tag(buff::Vector{UInt8})
     content = buff[offset:offset + content_length - 1]
     return ASNTag(tag_class, 
                   tag_encoding,
+                  tag_number_long_form,
                   tag_number_lenght,
                   tag_number,
                   tag_length_length,
@@ -164,10 +166,6 @@ function deserialize_tag(buff::Vector{UInt8})
                   content_length,
                   content,
                   [])
-end
-
-function serialized_length(tag::ASNTag)
-    return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*tag.content_length_indefinite
 end
 
 function deserialize_ber(buff::Vector{UInt8})
@@ -193,4 +191,58 @@ function deserialize_ber_children(buff::Vector{UInt8})
         idx += serialized_length(child)
     end
     return children
+end
+
+function serialized_length(tag::ASNTag)
+    return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*tag.content_length_indefinite
+end
+
+function serialize_ber(tag::ASNTag)
+    buffer = Vector{UInt8}(undef, serialized_length(tag))
+    offset = UInt64(1)
+    buffer[offset] = (tag.tag_class << 6) | (tag.tag_encoding << 5)
+    if !tag.tag_number_long_form
+        buffer[offset] |= tag.tag_number
+        offset += 1
+    else
+        buffer[offset] |= 0b00011111
+        offset += 1
+        tag_number = tag.tag_number
+        for _ in 1:(tag.tag_number_lenght - 1)
+            curr_segment = ((tag_number >> 7) & 0b01111111)
+            buffer[offset] = 0b10000000 | curr_segment
+            tag_number = tag_number >> 7
+            offset += 1
+        end
+        buffer[offset] = tag_number
+        offset += 1
+    end
+
+    if !tag.content_length_long_form
+        buffer[offset] = tag.content_length
+        offset += 1
+    elseif tag.content_length_indefinite
+        buffer[offset] = 0b10000000
+        offset += 1
+        buffer[length(buffer) - 1] = 0
+        buffer[length(buffer)] = 0
+    else
+        c_l_octet_count = tag.tag_length_length - 1
+        buffer[offset] = 0b10000000 | c_l_octet_count
+        offset += 1
+        tmp = reinterpret(UInt8, UInt64[tag.content_length])
+        cl_buffer = reverse(tmp[1:c_l_octet_count])
+        copyto!(buffer,
+                offset,
+                cl_buffer,
+                1,
+                c_l_octet_count)
+        offset += c_l_octet_count
+    end
+    copyto!(buffer,
+            offset,
+            tag.content,
+            1,
+            length(tag.content))
+    return buffer
 end
