@@ -78,12 +78,16 @@ function Base.show(io::IO, tag::ASNTag)
     end
     vals = [TagClass(tag.tag_class),
             TagEncoding(tag.tag_encoding),
+            tag.tag_number_long_form,
             tag.tag_number_lenght,
             _tag_number,
             tag.tag_length_length,
             ContentLengthType(tag.content_length_indefinite),
+            tag.content_length_long_form,
             tag.content_length]
-    if isempty(tag.children)
+    if isempty(tag.children) && tag.content_length == 0
+        append!(vals, ["UInt8[]", "ASNTag[]"])
+    elseif isempty(tag.children)
         append!(vals, ["UInt8[...]", "ASNTag[]"])
     else
         append!(vals, ["UInt8[]", "ASNTag[...]"])
