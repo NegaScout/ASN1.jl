@@ -83,7 +83,9 @@ function Base.show(io::IO, tag::ASNTag)
             tag.tag_length_length,
             ContentLengthType(tag.content_length_indefinite),
             tag.content_length]
-    if isempty(tag.children)
+    if isempty(tag.children) && tag.content_length == 0
+        append!(vals, ["UInt8[]", "ASNTag[]"])
+    elseif isempty(tag.children)
         append!(vals, ["UInt8[...]", "ASNTag[]"])
     else
         append!(vals, ["UInt8[]", "ASNTag[...]"])
