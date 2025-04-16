@@ -1,4 +1,4 @@
-export parse_tag, ASNTag
+export deserialize_ber, serialize_ber, ASNTag
 import Base.==
 
 function enum_defined(T::Type{<:Enum}, x::Integer)
@@ -64,6 +64,7 @@ struct ASNTag
     tag_number::UInt64
     tag_length_length::UInt64
     content_length_indefinite::Bool
+    content_length_long_form::Bool
     content_length::UInt64
     content::Vector{UInt8}
     children::Vector{ASNTag}
@@ -100,7 +101,7 @@ function ==(a::ASNTag, b::ASNTag)
             a.children == b.children)
 end
 
-function parse_tag(buff::Vector{UInt8})
+function deserialize_tag(buff::Vector{UInt8})
     tag_class = buff[1] >> 6
     tag_encoding = (buff[1] & 0b00100000) == 0b00100000
     tag_number_long_form = (buff[1] & 0b00011111) == 0b00011111
@@ -125,6 +126,7 @@ function parse_tag(buff::Vector{UInt8})
     end
     content_length_indefinite = buff[offset] == 0b10000000
     tag_length_length = UInt64(0)
+    short_form = false
     if !content_length_indefinite
         short_form = (buff[offset] & 0b10000000) == 0
         if short_form
@@ -158,6 +160,7 @@ function parse_tag(buff::Vector{UInt8})
                   tag_number,
                   tag_length_length,
                   content_length_indefinite,
+                  !short_form,
                   content_length,
                   content,
                   [])
@@ -167,23 +170,22 @@ function serialized_length(tag::ASNTag)
     return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*tag.content_length_indefinite
 end
 
-function parse_asn1(buff::Vector{UInt8})
-    tag = parse_tag(buff)
+function deserialize_ber(buff::Vector{UInt8})
+    tag = deserialize_tag(buff)
     if isnothing(tag)
         return nothing
     elseif tag.tag_encoding
-        tmp = parse_asn1_children(tag.content)
+        tmp = deserialize_ber_children(tag.content)
         append!(tag.children, tmp)
-        resize!(tag.content, 0)
     end
     return tag
 end
 
-function parse_asn1_children(buff::Vector{UInt8})
+function deserialize_ber_children(buff::Vector{UInt8})
     children = ASNTag[]
     idx = 1
     while idx <= length(buff)
-        child = parse_asn1(buff[idx:end])
+        child = deserialize_ber(buff[idx:end])
         if isnothing(child)
             return nothing
         end
