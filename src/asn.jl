@@ -107,6 +107,10 @@ function ==(a::ASNTag, b::ASNTag)
             a.children == b.children)
 end
 
+"""
+    deserialize_tag(buff::Vector{UInt8})
+Deserialize a BER tag (also deserializes DER/CER)
+"""
 function deserialize_tag(buff::Vector{UInt8})
     tag_class = buff[1] >> 6
     tag_encoding = (buff[1] & 0b00100000) == 0b00100000
@@ -182,6 +186,10 @@ function deserialize_tag(buff::Vector{UInt8})
                   [])
 end
 
+"""
+    deserialize_ber(buff::Vector{UInt8})
+Deserialize a whole BER "document" recursively (also deserializes DER/CER)
+"""
 function deserialize_ber(buff::Vector{UInt8})
     tag = deserialize_tag(buff)
     if isnothing(tag)
@@ -193,6 +201,10 @@ function deserialize_ber(buff::Vector{UInt8})
     return tag
 end
 
+"""
+    deserialize_ber_children(buff::Vector{UInt8})
+Deserialize a BER tag's constructed contents recursively (also deserializes DER/CER)
+"""
 function deserialize_ber_children(buff::Vector{UInt8})
     children = ASNTag[]
     idx = 1
@@ -207,10 +219,18 @@ function deserialize_ber_children(buff::Vector{UInt8})
     return children
 end
 
+"""
+    serialized_length(tag::ASNTag)
+Returns length in bytes of ASNTag in serialized form
+"""
 function serialized_length(tag::ASNTag)
     return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*(tag.content_length_type == 2)
 end
 
+"""
+    serialize_ber(tag::ASNTag)
+Serializes BER tree into binary format
+"""
 function serialize_ber(tag::ASNTag)
     buffer = Vector{UInt8}(undef, serialized_length(tag))
     offset = UInt64(1)
