@@ -18,8 +18,9 @@ end
 end
 
 @enum ContentLengthType begin
-    definite=false
-    indefinite=true
+    definite_short=0x0
+    definite_long=0x01
+    indefinite=0x02
 end
 
 @enum ClassUniversalTagNumber begin
@@ -64,8 +65,7 @@ struct ASNTag
     tag_number_lenght::UInt64
     tag_number::UInt64
     tag_length_length::UInt64
-    content_length_indefinite::Bool
-    content_length_long_form::Bool
+    content_length_type::UInt8
     content_length::UInt64
     content::Vector{UInt8}
     children::Vector{ASNTag}
@@ -82,8 +82,7 @@ function Base.show(io::IO, tag::ASNTag)
             tag.tag_number_lenght,
             _tag_number,
             tag.tag_length_length,
-            ContentLengthType(tag.content_length_indefinite),
-            tag.content_length_long_form,
+            ContentLengthType(tag.content_length_type),
             tag.content_length]
     if isempty(tag.children) && tag.content_length == 0
         append!(vals, ["UInt8[]", "ASNTag[]"])
@@ -98,9 +97,11 @@ end
 function ==(a::ASNTag, b::ASNTag)
     return (a.tag_class == b.tag_class &&
             a.tag_encoding == b.tag_encoding &&
-            a.tag_number == b.tag_number &&
+            a.tag_number_long_form == b.tag_number_long_form &&
             a.tag_number_lenght == b.tag_number_lenght &&
+            a.tag_number == b.tag_number &&
             a.tag_length_length == b.tag_length_length &&
+            a.content_length_type == b.content_length_type &&
             a.content_length == b.content_length &&
             a.content == b.content &&
             a.children == b.children)
@@ -159,14 +160,23 @@ function deserialize_tag(buff::Vector{UInt8})
         content_length = length(offset:offset + idx - 2) 
     end
     content = buff[offset:offset + content_length - 1]
+
+    content_length_type = UInt8(0)
+    if content_length_indefinite
+        content_length_type = 2
+    elseif !short_form
+        content_length_type = 1
+    else
+        content_length_type = 0
+    end
+
     return ASNTag(tag_class, 
                   tag_encoding,
                   tag_number_long_form,
                   tag_number_lenght,
                   tag_number,
                   tag_length_length,
-                  content_length_indefinite,
-                  !short_form,
+                  content_length_type,
                   content_length,
                   content,
                   [])
@@ -198,7 +208,7 @@ function deserialize_ber_children(buff::Vector{UInt8})
 end
 
 function serialized_length(tag::ASNTag)
-    return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*tag.content_length_indefinite
+    return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*(tag.content_length_type == 2)
 end
 
 function serialize_ber(tag::ASNTag)
@@ -222,10 +232,10 @@ function serialize_ber(tag::ASNTag)
         offset += 1
     end
 
-    if !tag.content_length_long_form
+    if tag.content_length_type == 0
         buffer[offset] = tag.content_length
         offset += 1
-    elseif tag.content_length_indefinite
+    elseif tag.content_length_type == 2
         buffer[offset] = 0b10000000
         offset += 1
         buffer[length(buffer) - 1] = 0
