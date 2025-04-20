@@ -66,7 +66,6 @@ struct ASNTag
     tag_number::UInt64
     tag_length_length::UInt64
     content_length_type::UInt8
-    content_length::UInt64
     content::Vector{UInt8}
     children::Vector{ASNTag}
 end
@@ -82,9 +81,8 @@ function Base.show(io::IO, tag::ASNTag)
             tag.tag_number_lenght,
             _tag_number,
             tag.tag_length_length,
-            ContentLengthType(tag.content_length_type),
-            tag.content_length]
-    if isempty(tag.children) && tag.content_length == 0
+            ContentLengthType(tag.content_length_type)]
+    if isempty(tag.children) && length(tag.content) == 0
         append!(vals, ["UInt8[]", "ASNTag[]"])
     elseif isempty(tag.children)
         append!(vals, ["UInt8[...]", "ASNTag[]"])
@@ -102,7 +100,6 @@ function ==(a::ASNTag, b::ASNTag)
             a.tag_number == b.tag_number &&
             a.tag_length_length == b.tag_length_length &&
             a.content_length_type == b.content_length_type &&
-            a.content_length == b.content_length &&
             a.content == b.content &&
             a.children == b.children)
 end
@@ -181,7 +178,6 @@ function deserialize_tag(buff::Vector{UInt8})
                   tag_number,
                   tag_length_length,
                   content_length_type,
-                  content_length,
                   content,
                   [])
 end
@@ -224,7 +220,7 @@ end
 Returns length in bytes of ASNTag in serialized form
 """
 function serialized_length(tag::ASNTag)
-    return 1 + tag.tag_number_lenght + tag.tag_length_length + tag.content_length + 2*(tag.content_length_type == 2)
+    return 1 + tag.tag_number_lenght + tag.tag_length_length + length(tag.content) + 2*(tag.content_length_type == 2)
 end
 
 """
@@ -253,7 +249,7 @@ function serialize_ber(tag::ASNTag)
     end
 
     if tag.content_length_type == 0
-        buffer[offset] = tag.content_length
+        buffer[offset] = length(tag.content)
         offset += 1
     elseif tag.content_length_type == 2
         buffer[offset] = 0b10000000
@@ -264,7 +260,8 @@ function serialize_ber(tag::ASNTag)
         c_l_octet_count = tag.tag_length_length - 1
         buffer[offset] = 0b10000000 | c_l_octet_count
         offset += 1
-        tmp = reinterpret(UInt8, UInt64[tag.content_length])
+        content_length = length(tag.content)
+        tmp = reinterpret(UInt8, UInt64[content_length])
         cl_buffer = reverse(tmp[1:c_l_octet_count])
         copyto!(buffer,
                 offset,
